@@ -1228,9 +1228,10 @@ photoPreview.onload = () => {
 
     photoUploadBtn.addEventListener('click', () => photoInput.click());
 
-   photoFrame.addEventListener('mouseenter', () => {
+  photoFrame.addEventListener('mouseenter', () => {
   if (window.innerWidth <= 900) return;
   setPhotoLensBackground();
+  photoFrame.classList.add('zooming');
 });
 
     photoFrame.addEventListener('mousemove', (event) => {
