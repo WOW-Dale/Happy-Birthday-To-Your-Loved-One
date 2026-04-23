@@ -591,7 +591,7 @@
     .photo-frame {
       position: relative;
       width: 100%;
-      aspect-ratio: 0.82 / 1;
+      aspect-ratio:  1 / 1;
       border-radius: 30px;
       overflow: hidden;
       box-shadow: 0 18px 36px rgba(58, 46, 51, 0.14), 0 0 0 1px rgba(255,255,255,0.8) inset;
@@ -602,7 +602,7 @@
       border: 1px solid rgba(255,255,255,0.9);
     }
 
-    .photo-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
     .photo-lens {
       position: absolute;
@@ -748,7 +748,7 @@
       .env-bottom { padding: 26px 24px 18px; }
       .cover-art { box-shadow: inset 0 0 0 10px rgba(239, 239, 233, 0.94); }
       .music-title { font-size: 15px; }
-      .photo-wrap { width: min(100%, 86vw); }
+      .photo-wrap { width: min(100%, 860px); }
       .photo-lens { display: none; }
     }
   </style>
@@ -1001,6 +1001,9 @@
       backdropPhoto.style.backgroundImage = `url('${CONFIG.photo}')`;
       backdropPhoto.classList.add('visible');
       photoPreview.src = CONFIG.photo;
+photoPreview.onload = () => {
+  setPhotoLensBackground();
+};
       photoPreview.setAttribute('srcset', CONFIG.photo);
       photoModalImage.src = CONFIG.photo;
       photoLens.style.backgroundImage = `url('${CONFIG.photo}')`;
@@ -1125,9 +1128,10 @@
       photoTimers.push(setTimeout(() => photoShell.classList.add('show-image'), 1800));
     }
 
-    function setPhotoLensBackground(rect) {
-      photoLens.style.backgroundSize = `${rect.width * lensZoom}px ${rect.height * lensZoom}px`;
-    }
+    function setPhotoLensBackground() {
+  const box = getDisplayedImageBox();
+  photoLens.style.backgroundSize = `${box.drawWidth * lensZoom}px ${box.drawHeight * lensZoom}px`;
+}
 
     function syncLens(event) {
       const rect = photoFrame.getBoundingClientRect();
@@ -1224,12 +1228,10 @@
 
     photoUploadBtn.addEventListener('click', () => photoInput.click());
 
-    photoFrame.addEventListener('mouseenter', () => {
-      if (window.innerWidth <= 900) return;
-      const rect = photoFrame.getBoundingClientRect();
-      setPhotoLensBackground(rect);
-      photoFrame.classList.add('zooming');
-    });
+   photoFrame.addEventListener('mouseenter', () => {
+  if (window.innerWidth <= 900) return;
+  setPhotoLensBackground();
+});
 
     photoFrame.addEventListener('mousemove', (event) => {
       if (window.innerWidth <= 900) return;
@@ -1240,16 +1242,14 @@
     photoFrame.addEventListener('click', openPhotoModal);
 
     lensZoomIn.addEventListener('click', () => {
-      lensZoom = Math.min(4, lensZoom + 0.2);
-      const rect = photoFrame.getBoundingClientRect();
-      setPhotoLensBackground(rect);
-    });
+  lensZoom = Math.min(4, lensZoom + 0.2);
+  setPhotoLensBackground();
+});
 
-    lensZoomOut.addEventListener('click', () => {
-      lensZoom = Math.max(1.4, lensZoom - 0.2);
-      const rect = photoFrame.getBoundingClientRect();
-      setPhotoLensBackground(rect);
-    });
+lensZoomOut.addEventListener('click', () => {
+  lensZoom = Math.max(1.4, lensZoom - 0.2);
+  setPhotoLensBackground();
+});
 
     photoInput.addEventListener('change', (event) => {
       const file = event.target.files && event.target.files[0];
