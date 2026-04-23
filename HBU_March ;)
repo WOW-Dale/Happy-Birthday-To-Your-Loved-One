@@ -1128,23 +1128,82 @@ photoPreview.onload = () => {
       photoTimers.push(setTimeout(() => photoShell.classList.add('show-image'), 1800));
     }
 
-    function setPhotoLensBackground() {
+   function getDisplayedImageBox() {
+  const frameRect = photoFrame.getBoundingClientRect();
+  const naturalWidth = photoPreview.naturalWidth || frameRect.width;
+  const naturalHeight = photoPreview.naturalHeight || frameRect.height;
+
+  const imageRatio = naturalWidth / naturalHeight;
+  const frameRatio = frameRect.width / frameRect.height;
+
+  let drawWidth;
+  let drawHeight;
+  let offsetX;
+  let offsetY;
+
+  if (imageRatio > frameRatio) {
+    drawWidth = frameRect.width;
+    drawHeight = drawWidth / imageRatio;
+    offsetX = 0;
+    offsetY = (frameRect.height - drawHeight) / 2;
+  } else {
+    drawHeight = frameRect.height;
+    drawWidth = drawHeight * imageRatio;
+    offsetX = (frameRect.width - drawWidth) / 2;
+    offsetY = 0;
+  }
+
+  return {
+    frameRect,
+    drawWidth,
+    drawHeight,
+    offsetX,
+    offsetY
+  };
+}
+
+function setPhotoLensBackground() {
   const box = getDisplayedImageBox();
   photoLens.style.backgroundSize = `${box.drawWidth * lensZoom}px ${box.drawHeight * lensZoom}px`;
 }
 
-    function syncLens(event) {
-      const rect = photoFrame.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const percentX = x / rect.width;
-      const percentY = y / rect.height;
-      photoLens.style.left = `${x}px`;
-      photoLens.style.top = `${y}px`;
-      const bgX = percentX * rect.width * lensZoom - photoLens.offsetWidth / 2;
-      const bgY = percentY * rect.height * lensZoom - photoLens.offsetHeight / 2;
-      photoLens.style.backgroundPosition = `-${bgX}px -${bgY}px`;
-    }
+function syncLens(event) {
+  if (window.innerWidth <= 900) return;
+
+  const box = getDisplayedImageBox();
+  const frameRect = box.frameRect;
+
+  const rawX = event.clientX - frameRect.left;
+  const rawY = event.clientY - frameRect.top;
+
+  const x = rawX - box.offsetX;
+  const y = rawY - box.offsetY;
+
+  const insideImage =
+    x >= 0 &&
+    y >= 0 &&
+    x <= box.drawWidth &&
+    y <= box.drawHeight;
+
+  if (!insideImage) {
+    photoFrame.classList.remove('zooming');
+    photoLens.style.backgroundPosition = 'center';
+    return;
+  }
+
+  photoFrame.classList.add('zooming');
+
+  const lensX = box.offsetX + x;
+  const lensY = box.offsetY + y;
+
+  photoLens.style.left = `${lensX}px`;
+  photoLens.style.top = `${lensY}px`;
+
+  const bgX = x * lensZoom - photoLens.offsetWidth / 2;
+  const bgY = y * lensZoom - photoLens.offsetHeight / 2;
+
+  photoLens.style.backgroundPosition = `-${bgX}px -${bgY}px`;
+}
 
     function openPhotoModal() {
       modalScale = 1;
@@ -1157,8 +1216,8 @@ photoPreview.onload = () => {
     }
 
     function syncModalScale() {
-      photoModalImage.style.setProperty('--photo-scale', modalScale);
-    }
+  photoModalImage.style.transform = `scale(${modalScale})`;
+}
 
     function openSong(event) {
       if (event) event.stopPropagation();
